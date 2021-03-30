@@ -1,0 +1,255 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;*******************************************************
+                       ******** 
+    2 00000000         ; SYSCLOCK.s
+    3 00000000         ; Setting the System Clock as PLL for EE447 Laboratory P
+                       roject
+    4 00000000         ; Audio Recorder and Player
+    5 00000000         ; Created by Ilayda BEYRELI 2093474 & Mehmet Ali YANIKLA
+                       R 1877059
+    6 00000000         ; Created at 03/01/2017 14.12
+    7 00000000         ; Last Updated at 07/01/2017 12.06
+    8 00000000         ; Additional Components : 
+    9 00000000         ; 1. MAX9814 Microphone Amplifier with AGC and Low-Noise
+                        Microphone Bias
+   10 00000000         ; 2. MCP4725 12-Bit Digital-to-Analog Converter with EEP
+                       ROM Memory in SOT-23-6
+   11 00000000         ; 3. PAM8302A 2.5W Filterless Class-D Mono Audio Amplifi
+                       er
+   12 00000000         ;*******************************************************
+                       ******** 
+   13 00000000         ;*******************************************************
+                       ******** 
+   14 00000000         ; EQU Directives
+   15 00000000         ; These directives do not allocate memory
+   16 00000000         ;*******************************************************
+                       ********
+   17 00000000         ;LABEL    DIRECTIVE  VALUE   COMMENT
+   18 00000000 400FE060 
+                       SYSCTLR_RCC
+                               EQU              0x400FE060  ; Run Mode Clock Co
+                                                            nfiguration
+   19 00000000 400FE050 
+                       SYSCTLR_RIS
+                               EQU              0x400FE050  ; Raw Interup Statu
+                                                            s, bit 6 PLL Lock R
+                                                            aw Interupt Status
+   20 00000000 400FE160 
+                       PLLFREQ0
+                               EQU              0x400FE160  ; PLL Frequency 0 1
+                                                            9:10 MFRAC - 9:0 MI
+                                                            NT
+   21 00000000 400FE164 
+                       PLLFREQ1
+                               EQU              0x400FE164  ; 12:8 Q - 4:0 N
+   22 00000000 400FE168 
+                       PLLSTAT EQU              0x400FE168  ; PLL Status
+   23 00000000         
+   24 00000000         ;*******************************************************
+                       ********
+   25 00000000         ; Directives - This Data Section is part of the code
+   26 00000000         ; It is in the read only section  so values cannot be ch
+                       anged.
+   27 00000000         ;*******************************************************
+                       ********
+   28 00000000         ;LABEL    DIRECTIVE  VALUE   COMMENT
+   29 00000000                 AREA             routines, CODE, READONLY
+   30 00000000                 THUMB
+   31 00000000                 EXTERN           OutChar     ;
+   32 00000000                 EXPORT           PLLClock    ; 
+   33 00000000         
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   34 00000000         ;*******************************************************
+                       ********
+   35 00000000         ; Subroutine Section _ PLLClock : Setting the system clo
+                       ck as PLL at 20MHz
+   36 00000000         ;*******************************************************
+                       ********
+   37 00000000         ;LABEL   DIRECTIVE  VALUE   COMMENT 
+   38 00000000         PLLClock
+                               PROC
+   39 00000000 B500            PUSH             {LR}        ;
+   40 00000002 B403            PUSH             {R0-R1}     ;
+   41 00000004         
+   42 00000004 4913            LDR              R1, =SYSCTLR_RCC ;
+   43 00000006 6808            LDR              R0, [R1]    ;
+   44 00000008 F440 6000       ORR              R0, #0x800  ; set BYPASS bit (1
+                                                            1)
+   45 0000000C F420 0080       BIC              R0, #0x400000 ; clear USESYS bi
+                                                            t (22)
+   46 00000010 6808            LDR              R0, [R1]    ;
+   47 00000012         
+   48 00000012         
+   49 00000012 F020 0020       BIC              R0, #0x20   ; clear bit 5 for P
+                                                            IOSC 
+   50 00000016 F040 0010       ORR              R0, #0x10   ; set bit 4 for PIO
+                                                            SC
+   51 0000001A 6808            LDR              R0, [R1]    ;
+   52 0000001C         
+   53 0000001C F420 70E0       BIC              R0, #0x1C0  ; set XTAL to 0x18
+   54 00000020 F440 60C0       ORR              R0, #0x600  ; 
+   55 00000024 6808            LDR              R0, [R1]    ;
+   56 00000026         
+   57 00000026 F420 5000       BIC              R0, #0x2000 ; clearing PWRDN bi
+                                                            t (13)
+   58 0000002A 6808            LDR              R0, [R1]    ;
+   59 0000002C         
+   60 0000002C         ; Setting system divider 20 MHz and setting USESYS bit
+   61 0000002C         
+   62 0000002C F020 7040       BIC              R0, #0x3000000 ; 
+   63 00000030 F040 6098       ORR              R0, #0x4C00000 ; 
+   64 00000034 6808            LDR              R0, [R1]    ;
+   65 00000036         
+   66 00000036 BF00            NOP                          ; 
+   67 00000038 BF00            NOP                          ;
+   68 0000003A BF00            NOP                          ;
+   69 0000003C BF00            NOP                          ;
+   70 0000003E BF00            NOP                          ;
+   71 00000040 BF00            NOP                          ; 
+   72 00000042         
+   73 00000042         ;; checking locking status of PLL
+   74 00000042         
+   75 00000042         ;PLLLockPoll  LDR    R1, =SYSCTLR_RIS ; 
+   76 00000042         ;LDR    R0, [R1] ;
+   77 00000042         ;ANDS   R0, #0x20 ;
+   78 00000042         ;; testing    
+   79 00000042         ;MOV    R5, #54;
+   80 00000042         ;BL     OutChar;     
+   81 00000042         
+   82 00000042         ;BEQ    PLLLockPoll ; 
+   83 00000042         
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   84 00000042         ; enabling the use of PLL by clearing the bypass bit
+   85 00000042         
+   86 00000042 4904            LDR              R1, =SYSCTLR_RCC ;
+   87 00000044 6808            LDR              R0, [R1]    ;
+   88 00000046 F420 6000       BIC              R0, #0x800  ; clear BYPASS bit 
+                                                            (11)
+   89 0000004A         
+   90 0000004A         ; testing the Q & N values for PLL    
+   91 0000004A         ;LDR    R1, =PLLFREQ1;
+   92 0000004A         ;LDR    R0, [R1] ;
+   93 0000004A         ;MOV    R5, R0
+   94 0000004A         ;BL OutChar
+   95 0000004A         
+   96 0000004A BC03            POP              {R0-R1}     ;
+   97 0000004C F85D EB04       POP              {LR}        ;
+   98 00000050 4770            BX               LR          ; 
+   99 00000052                 ENDP
+  100 00000052         
+  101 00000052         
+  102 00000052         
+  103 00000052         
+  104 00000052 00 00           ALIGN                        ; make sure the end
+                                                             of this section is
+                                                             aligned
+  105 00000054                 END                          ; end of file
+              400FE060 
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
+erwork --depend=.\objects\sysclock.d -o.\objects\sysclock.o -I.\RTE\_Target_1 -
+IC:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C123 -IC:\Keil_v5\AR
+M\CMSIS\Include --predefine="__EVAL SETA 1" --predefine="__UVISION_VERSION SETA
+ 524" --predefine="TM4C1231H6PM SETA 1" --list=.\listings\sysclock.lst SYSCLOCK
+.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+PLLClock 00000000
+
+Symbol: PLLClock
+   Definitions
+      At line 38 in file SYSCLOCK.s
+   Uses
+      At line 32 in file SYSCLOCK.s
+Comment: PLLClock used once
+routines 00000000
+
+Symbol: routines
+   Definitions
+      At line 29 in file SYSCLOCK.s
+   Uses
+      None
+Comment: routines unused
+2 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+PLLFREQ0 400FE160
+
+Symbol: PLLFREQ0
+   Definitions
+      At line 20 in file SYSCLOCK.s
+   Uses
+      None
+Comment: PLLFREQ0 unused
+PLLFREQ1 400FE164
+
+Symbol: PLLFREQ1
+   Definitions
+      At line 21 in file SYSCLOCK.s
+   Uses
+      None
+Comment: PLLFREQ1 unused
+PLLSTAT 400FE168
+
+Symbol: PLLSTAT
+   Definitions
+      At line 22 in file SYSCLOCK.s
+   Uses
+      None
+Comment: PLLSTAT unused
+SYSCTLR_RCC 400FE060
+
+Symbol: SYSCTLR_RCC
+   Definitions
+      At line 18 in file SYSCLOCK.s
+   Uses
+      At line 42 in file SYSCLOCK.s
+      At line 86 in file SYSCLOCK.s
+
+SYSCTLR_RIS 400FE050
+
+Symbol: SYSCTLR_RIS
+   Definitions
+      At line 19 in file SYSCLOCK.s
+   Uses
+      None
+Comment: SYSCTLR_RIS unused
+5 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+OutChar 00000000
+
+Symbol: OutChar
+   Definitions
+      At line 31 in file SYSCLOCK.s
+   Uses
+      None
+Comment: OutChar unused
+1 symbol
+344 symbols in table

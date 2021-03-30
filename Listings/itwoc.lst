@@ -1,0 +1,977 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;*******************************************************
+                       ******** 
+    2 00000000         ; ItwoC.s
+    3 00000000         ; Initiating I2C communication protocol
+    4 00000000         ; in EE447 Laboratory Project Audio Recorder and Player
+    5 00000000         ; Created by Ilayda BEYRELI 2093474 & Mehmet Ali YANIKLA
+                       R 1877059
+    6 00000000         ; Created at 07/01/2017 12.06
+    7 00000000         ; Last Updated at 20/01/2017 14.00
+    8 00000000         ; Additional Components : 
+    9 00000000         ; 1. MAX9814 Microphone Amplifier with AGC and Low-Noise
+                        Microphone Bias
+   10 00000000         ; 2. MCP4725 12-Bit Digital-to-Analog Converter with EEP
+                       ROM Memory in SOT-23-6
+   11 00000000         ; 3. PAM8302A 2.5W Filterless Class-D Mono Audio Amplifi
+                       er
+   12 00000000         ;*******************************************************
+                       ******** 
+   13 00000000         ;*******************************************************
+                       ******** 
+   14 00000000         ; EQU Directives
+   15 00000000         ; These directives do not allocate memory
+   16 00000000         ;*******************************************************
+                       ********
+   17 00000000         ;LABEL    DIRECTIVE  VALUE   COMMENT
+   18 00000000         
+   19 00000000 400FE620 
+                       RCGCI2C0
+                               EQU              0x400FE620  ;
+   20 00000000 400FE608 
+                       GPIO_PORTB_RCGCGPIO
+                               EQU              0x400FE608  ;
+   21 00000000 40005420 
+                       GPIO_PORTB_AFSEL
+                               EQU              0x40005420  ;
+   22 00000000 40005400 
+                       GPIO_PORTB_DIR
+                               EQU              0x40005400  ;
+   23 00000000 4000551C 
+                       GPIO_PORTB_DEN
+                               EQU              0x4000551C  ;
+   24 00000000 4000550C 
+                       GPIO_PORTB_GPIOODR
+                               EQU              0x4000550C  ;
+   25 00000000 40005510 
+                       GPIO_PORTB_GPIOPUR
+                               EQU              0x40005510  ; 
+   26 00000000 4000552C 
+                       GPIO_PORTB_GPIOPCTL
+                               EQU              0x4000552C  ;
+   27 00000000 40005520 
+                       GPIO_PORTB_LOCK
+                               EQU              0x40005520  ;
+   28 00000000 4C4F434B 
+                       KEY     EQU              0x4C4F434B  ;
+   29 00000000 40005524 
+                       GPIO_PORTB_CMT
+                               EQU              0x40005524  ; 
+   30 00000000         
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   31 00000000 40020020 
+                       I2C0_MCR
+                               EQU              0x40020020  ;
+   32 00000000 4002000C 
+                       I2C0_MTPR
+                               EQU              0x4002000C  ; 
+   33 00000000 40020000 
+                       I2C0_MSA
+                               EQU              0x40020000  ;
+   34 00000000 40020008 
+                       I2C0_MDR
+                               EQU              0x40020008  ; I2C Master Data
+   35 00000000 40020004 
+                       I2C0_MCS
+                               EQU              0x40020004  ; I2C Master Contro
+                                                            l/Status
+   36 00000000         
+   37 00000000         
+   38 00000000         ;ADC Register
+   39 00000000 400FE638 
+                       SYSCTL_RCGCADC
+                               EQU              0x400FE638  ; ADC Clock Resigte
+                                                            r
+   40 00000000 40039000 
+                       ADC1_ACTSS
+                               EQU              0x40039000  ; Sample Sequencer 
+                                                            (Base Address of AD
+                                                            C0)
+   41 00000000 40039004 
+                       ADC1_RIS
+                               EQU              0x40039004  ; Raw Interrupt Sta
+                                                            tus
+   42 00000000 40039008 
+                       ADC1_IM EQU              0x40039008  ; Interupt Select
+   43 00000000 40039014 
+                       ADC1_EMUX
+                               EQU              0x40039014  ; Trigger Select
+   44 00000000 40039028 
+                       ADC1_PSSI
+                               EQU              0x40039028  ; Initiate Sample
+   45 00000000 400390A0 
+                       ADC1_SSMUX3
+                               EQU              0x400390A0  ; Input Channel Sel
+                                                            ect
+   46 00000000 400390A4 
+                       ADC1_SSCTL3
+                               EQU              0x400390A4  ; Sample Sequence C
+                                                            ontrol
+   47 00000000 400390A8 
+                       ADC1_SSFIFO3
+                               EQU              0x400390A8  ; Channel 3 Status
+   48 00000000 40039FCA 
+                       ADC1_PP EQU              0x40039FCA  ; Sample Rate
+   49 00000000 4003900C 
+                       ADC1_ISC
+                               EQU              0x4003900C  ; Interrupt Status 
+                                                            & Clear
+   50 00000000         
+   51 00000000         ;General GPIO Registers
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   52 00000000 400FE608 
+                       SYSCTL_RCGCGPIO
+                               EQU              0x400FE608  ; GPIO Gate Control
+                                                            
+   53 00000000         
+   54 00000000         ;GPIO Registers for Port E3
+   55 00000000 40024020 
+                       GPIO_PORTE_DATA
+                               EQU              0x40024020  ; Access E3
+   56 00000000 40024400 
+                       GPIO_PORTE_DIR
+                               EQU              0x40024400  ; Port Direction
+   57 00000000 40024420 
+                       GPIO_PORTE_AFSEL
+                               EQU              0x40024420  ; Alt Function enab
+                                                            le
+   58 00000000 4002451C 
+                       GPIO_PORTE_DEN
+                               EQU              0x4002451C  ; Digital Enable
+   59 00000000 40024528 
+                       GPIO_PORTE_AMSEL
+                               EQU              0x40024528  ; Analog enable
+   60 00000000 4002452C 
+                       GPIO_PORTE_PCTL
+                               EQU              0x4002452C  ; Alternate Functio
+                                                            ns
+   61 00000000         
+   62 00000000         
+   63 00000000         
+   64 00000000 20000400 
+                       MEMORY  EQU              0x20000400  ; selected for avoi
+                                                            ding stack interfer
+                                                            ence 
+   65 00000000         
+   66 00000000         ;*******************************************************
+                       ********
+   67 00000000         ; Directives - This Data Section is part of the code
+   68 00000000         ; It is in the read only section  so values cannot be ch
+                       anged.
+   69 00000000         ;*******************************************************
+                       ********
+   70 00000000         ;LABEL    DIRECTIVE  VALUE   COMMENT
+   71 00000000                 AREA             routines, CODE, READONLY
+   72 00000000                 THUMB
+   73 00000000                 EXTERN           OutChar     ;
+   74 00000000                 EXTERN           DELAY       ; 
+   75 00000000                 EXTERN           DELAY100    ; 
+   76 00000000         
+   77 00000000         
+   78 00000000                 EXPORT           I2C0_INIT   ; 
+   79 00000000                 EXPORT           I2C0_SEND   ; 
+   80 00000000                 EXPORT           ADC1_INIT   ;
+   81 00000000         
+   82 00000000         ;*******************************************************
+                       ********
+   83 00000000         ; Subroutine Section _ I2C0_INIT : Initialtig I2C commun
+                       ication protocl ports
+   84 00000000         ;*******************************************************
+                       ********
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+   85 00000000         ;LABEL   DIRECTIVE  VALUE   COMMENT      
+   86 00000000         I2C0_INIT
+                               PROC
+   87 00000000 B500            PUSH             {LR}        ;
+   88 00000002         
+   89 00000002 4965            LDR              R1,=RCGCI2C0 ;
+   90 00000004 6808            LDR              R0,[R1]     ;
+   91 00000006 F040 0001       ORR              R0,R0,#0x01 ;set bit 1 for mode
+                                                             0
+   92 0000000A 6008            STR              R0,[R1]     ;
+   93 0000000C         
+   94 0000000C BF00            NOP                          ;
+   95 0000000E BF00            NOP                          ;
+   96 00000010 BF00            NOP                          ;
+   97 00000012         
+   98 00000012 4962            LDR              R1,=SYSCTL_RCGCGPIO ;
+   99 00000014 6808            LDR              R0,[R1]     ;
+  100 00000016 F040 0002       ORR              R0,R0,#0x02 ;
+  101 0000001A 6008            STR              R0,[R1]     ;port B activation
+  102 0000001C         
+  103 0000001C BF00            NOP                          ;
+  104 0000001E BF00            NOP                          ;
+  105 00000020 BF00            NOP                          ;
+  106 00000022         
+  107 00000022 495F            LDR              R1, =GPIO_PORTB_LOCK ;
+  108 00000024 485F            LDR              R0, =KEY    ;
+  109 00000026 6008            STR              R0, [R1]    ;
+  110 00000028         
+  111 00000028 495F            LDR              R1, =GPIO_PORTB_CMT ;
+  112 0000002A F04F 000C       MOV              R0, #0x0C   ;
+  113 0000002E 6008            STR              R0, [R1]    ;
+  114 00000030         
+  115 00000030 495E            LDR              R1,=GPIO_PORTB_AFSEL ;
+  116 00000032 6808            LDR              R0,[R1]     ;
+  117 00000034 F040 000C       ORR              R0,R0,#0x0C ;
+  118 00000038 6008            STR              R0,[R1]     ;
+  119 0000003A         
+  120 0000003A 495D            LDR              R1,=GPIO_PORTB_GPIOODR ; 
+  121 0000003C 6808            LDR              R0,[R1]     ;
+  122 0000003E F040 0008       ORR              R0,R0,#0x08 ;
+  123 00000042 6008            STR              R0,[R1]     ;
+  124 00000044         
+  125 00000044 495B            LDR              R1, =GPIO_PORTB_DIR ; set direc
+                                                            tion of B2 & B3
+  126 00000046 6808            LDR              R0, [R1]    ;
+  127 00000048 F040 000C       ORR              R0, R0, #0x0C ; set bit3 for ou
+                                                            tput
+  128 0000004C 6008            STR              R0, [R1]    ;
+  129 0000004E         
+  130 0000004E 495A            LDR              R1, =GPIO_PORTB_DEN ; disable p
+                                                            ort digital
+  131 00000050 6808            LDR              R0, [R1]    ;
+  132 00000052 F040 000C       ORR              R0, R0, #0x0C
+  133 00000056 6008            STR              R0, [R1]    ;
+  134 00000058         
+  135 00000058 4958            LDR              R1,=GPIO_PORTB_GPIOPCTL ;
+  136 0000005A 6808            LDR              R0,[R1]     ;
+  137 0000005C F44F 504C       MOV              R0,#0x00003300
+  138 00000060 6008            STR              R0,[R1]     ;
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+  139 00000062         
+  140 00000062 4953            LDR              R1, =GPIO_PORTB_GPIOODR ; 
+  141 00000064 6808            LDR              R0,[R1]     ;
+  142 00000066 F040 0008       ORR              R0, #0x8    ;
+  143 0000006A 6008            STR              R0, [R1]    ;
+  144 0000006C         
+  145 0000006C         
+  146 0000006C 4954            LDR              R1,=I2C0_MCR ;initialize the i2
+                                                            c master
+  147 0000006E F240 0010 
+              F2C0 0000        MOV32            R0,#0x00000010
+  148 00000076 6008            STR              R0,[R1]     ;
+  149 00000078         
+  150 00000078 4952            LDR              R1,=I2C0_MTPR ;clock periods
+  151 0000007A F240 0009 
+              F2C0 0000        MOV32            R0,#9       ;
+  152 00000082 6008            STR              R0,[R1]     ;
+  153 00000084         
+  154 00000084 4950            LDR              R1,=I2C0_MSA ; master slave add
+                                                            ress
+  155 00000086 F240 00C4 
+              F2C0 0000        MOV32            R0,#0x000000C4 ;1 bit left for 
+                                                            data
+  156 0000008E 6008            STR              R0,[R1]     ; 
+  157 00000090 F85D EB04       POP              {LR}        ; 
+  158 00000094 4770            BX               LR          ;
+  159 00000096                 ENDP                         ; 
+  160 00000096         
+  161 00000096         ;*******************************************************
+                       ********
+  162 00000096         ; Subroutine Section _ I2C0_SEND : Sending desired data 
+                       stored
+  163 00000096         ;       in the memory starting from memory 
+  164 00000096         ;       location in R3, to audio amplifier
+  165 00000096         ;*******************************************************
+                       ********
+  166 00000096         ;LABEL   DIRECTIVE  VALUE   COMMENT    
+  167 00000096         I2C0_SEND
+                               PROC
+  168 00000096 B500            PUSH             {LR}        ;
+  169 00000098 E92D 1FFF       PUSH             {R0-R12}    ;
+  170 0000009C         
+  171 0000009C F04F 0601       MOV              R6, #1      ;  
+  172 000000A0 F04F 0964       MOV              R9, #0x64   ;
+  173 000000A4         
+  174 000000A4         ;BL     ADC1_INIT ;
+  175 000000A4         
+  176 000000A4         ;LDR    R1, =ADC1_PSSI ; initialize sampling
+  177 000000A4         ;LDR    R0, [R1] ;
+  178 000000A4         ;ORR    R0, R0, #0x08 ;
+  179 000000A4         ;STR    R0, [R1] ;
+  180 000000A4         
+  181 000000A4         
+  182 000000A4 F04F 0400 
+                       i2csending
+                               MOV              R4, #0      ; data to be sent h
+                                                            older
+  183 000000A8         
+  184 000000A8         ;ADCPolling  LDR    R1, =ADC1_RIS ; checking RIS resigte
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+                       r by polling
+  185 000000A8         ;LDR    R0, [R1] ;
+  186 000000A8         ;ANDS   R0, R0, #0x08 ;
+  187 000000A8         ;BEQ    ADCPolling ;
+  188 000000A8         
+  189 000000A8         ;LDR    R1, =ADC1_SSFIFO3 ; read the result in case of i
+                       nterrupt
+  190 000000A8         ;LDR    R8, [R1] ;
+  191 000000A8         ;SDIV   R6, R8, R9 ;
+  192 000000A8         ;ADD    R6, R6, #1 ;
+  193 000000A8         
+  194 000000A8         ;LDR    R1, =ADC1_ISC ; clearing interrupt flag
+  195 000000A8         ;MOV    R0, #0x8 ;
+  196 000000A8         ;STR    R0, [R1] ; 
+  197 000000A8         
+  198 000000A8 781C            LDRB             R4, [R3]    ; byte stored in ad
+                                                            ress R3 is loaded t
+                                                            o R4
+  199 000000AA 4433            ADD              R3, R3, R6  ;
+  200 000000AC         
+  201 000000AC 4947            LDR              R1, =I2C0_MDR ;
+  202 000000AE F004 00F0       AND              R0, R4, #0xF0 ; msb of R4 (7:4)
+                                                             is loaded to R0 as
+                                                             0x00X 
+  203 000000B2 EA4F 1010       LSR              R0, R0, #4  ;
+  204 000000B6 6008            STR              R0,[R1]     ;
+  205 000000B8         
+  206 000000B8         
+  207 000000B8 4A45            LDR              R2, =I2C0_MCS ;
+  208 000000BA F04F 0003       MOV              R0, #0x03   ; START/RUN
+  209 000000BE 6010            STR              R0, [R2]    ;
+  210 000000C0         
+  211 000000C0 4A43            LDR              R2, =I2C0_MCS ;
+  212 000000C2 F04F 0001       MOV              R0, #0x01   ; RUN
+  213 000000C6 6010            STR              R0, [R2]    ;
+  214 000000C8         
+  215 000000C8         
+  216 000000C8 6810    i2cbusy1
+                               LDR              R0, [R2]    ;
+  217 000000CA F010 0001       ANDS             R0, #0x01   ;   
+  218 000000CE D1FB            BNE              i2cbusy1    ;
+  219 000000D0         
+  220 000000D0 F004 000F       AND              R0, R4, #0x0F ; lsb of R4 (7:4)
+                                                             is loaded to R0 as
+                                                             0xX00 
+  221 000000D4 EA4F 2000       LSL              R0, R0, #8  ;
+  222 000000D8 6008            STR              R0,[R1]     ;
+  223 000000DA         
+  224 000000DA 4A3D            LDR              R2, =I2C0_MCS ;
+  225 000000DC F04F 0001       MOV              R0, #0x01   ; RUN
+  226 000000E0 6010            STR              R0, [R2]    ;
+  227 000000E2         
+  228 000000E2 6810    i2cbusy2
+                               LDR              R0, [R2]    ;
+  229 000000E4 F010 0001       ANDS             R0, #0x01   ;   
+  230 000000E8 D1FB            BNE              i2cbusy2    ;
+  231 000000EA         
+  232 000000EA 4A39            LDR              R2, =I2C0_MCS ;
+  233 000000EC F04F 0004       MOV              R0, #0x4    ; STOP 
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+  234 000000F0 6010            STR              R0, [R2]    ;
+  235 000000F2         
+  236 000000F2 2F00            CMP              R7, #0      ;
+  237 000000F4 BF18 1BBF       SUBNE            R7,R7, R6   ;
+  238 000000F8         
+  239 000000F8 D1D4            BNE              i2csending  ;
+  240 000000FA         
+  241 000000FA E8BD 1FFF       POP              {R0-R12}    ;
+  242 000000FE F85D EB04       POP              {LR}        ;
+  243 00000102 4770            BX               LR          ;
+  244 00000104                 ENDP                         ;
+  245 00000104         
+  246 00000104         ;*******************************************************
+                       ********
+  247 00000104         ; Subroutine Section _ ADC_INIT : Initialization of ADC0
+                        module
+  248 00000104         ;          with related GPIO configuration
+  249 00000104         ;*******************************************************
+                       ********
+  250 00000104         ;LABEL   DIRECTIVE  VALUE   COMMENT 
+  251 00000104         ADC1_INIT
+                               PROC
+  252 00000104 B500            PUSH             {LR}        ;
+  253 00000106 E92D 1FFF       PUSH             {R0-R12}    ;
+  254 0000010A         
+  255 0000010A         ; initialting clocks for GPIO and ADC blocks
+  256 0000010A         
+  257 0000010A 4932            LDR              R1, =SYSCTL_RCGCADC ; enable cl
+                                                            ock for ADC block 
+  258 0000010C 6808            LDR              R0, [R1]    ;
+  259 0000010E F040 0002       ORR              R0, R0, #0x02 ;
+  260 00000112 6008            STR              R0, [R1]    ;
+  261 00000114         
+  262 00000114 F7FF FFFE       BL               DELAY       ; let the clock sta
+                                                            bilize
+  263 00000118         
+  264 00000118 4920            LDR              R1, =SYSCTL_RCGCGPIO ; enable c
+                                                            lock for GPIO Port 
+                                                            E
+  265 0000011A 6808            LDR              R0, [R1]    ;
+  266 0000011C F040 0010       ORR              R0, R0, #0x10 ; 
+  267 00000120 6008            STR              R0, [R1]    ;    
+  268 00000122         
+  269 00000122 F7FF FFFE       BL               DELAY100    ; let the clock sta
+                                                            bilize
+  270 00000126         
+  271 00000126         ; GPIO Setup _ Port E3
+  272 00000126         
+  273 00000126 492C            LDR              R1, =GPIO_PORTE_DIR 
+                                                            ; set E4 as input
+  274 00000128 6808            LDR              R0, [R1]    ;
+  275 0000012A F020 00FF       BIC              R0, R0, #0xFF ; 
+  276 0000012E 6008            STR              R0, [R1]    ;
+  277 00000130         
+  278 00000130 492A            LDR              R1, =GPIO_PORTE_AFSEL ; set alt
+                                                             function for E4
+  279 00000132 6808            LDR              R0, [R1]    ;
+  280 00000134 F040 0010       ORR              R0, R0, #0x10 ; 
+  281 00000138 6008            STR              R0, [R1]    ;
+
+
+
+ARM Macro Assembler    Page 8 
+
+
+  282 0000013A         
+  283 0000013A 4929            LDR              R1, =GPIO_PORTE_DEN ; disable d
+                                                            igital for E4
+  284 0000013C 6808            LDR              R0, [R1]    ;
+  285 0000013E F020 0010       BIC              R0, R0, #0x10 ; 
+  286 00000142 6008            STR              R0, [R1]    ;
+  287 00000144         
+  288 00000144 4927            LDR              R1, =GPIO_PORTE_AMSEL ; enable 
+                                                            analog for E4
+  289 00000146 6808            LDR              R0, [R1]    ;
+  290 00000148 F040 0010       ORR              R0, R0, #0x10 ; 
+  291 0000014C 6008            STR              R0, [R1]    ;    
+  292 0000014E         
+  293 0000014E         ; ADC Setup _ ADC1
+  294 0000014E         
+  295 0000014E 4926            LDR              R1, =ADC1_ACTSS ; disable seque
+                                                            ncer during setup
+  296 00000150 6808            LDR              R0, [R1]    ;
+  297 00000152 F020 0008       BIC              R0, R0, #0x08 
+                                                            ; clear bit for SS3
+                                                            
+  298 00000156 6008            STR              R0, [R1]    ;
+  299 00000158         
+  300 00000158 4924            LDR              R1, =ADC1_EMUX ; clearing bits 
+                                                            12:15 to select sof
+                                                            tware
+  301 0000015A 6808            LDR              R0, [R1]    ;
+  302 0000015C F420 4070       BIC              R0, R0, #0xF000 ; 
+  303 00000160 6008            STR              R0, [R1]    ;
+  304 00000162         
+  305 00000162 4923            LDR              R1, =ADC1_SSMUX3 ; writing bits
+                                                             0:3 to select AIN9
+                                                            
+  306 00000164 6808            LDR              R0, [R1]    ;
+  307 00000166 F020 000F       BIC              R0, R0, #0x000F ;
+  308 0000016A F040 0009       ORR              R0, R0, #0x9 ;
+  309 0000016E 6008            STR              R0, [R1]    ;
+  310 00000170         
+  311 00000170 4920            LDR              R1, =ADC1_SSCTL3 ; disabling in
+                                                            terupt and ending t
+                                                            he sequence 
+  312 00000172 6808            LDR              R0, [R1]    ;
+  313 00000174 F040 0006       ORR              R0, R0, #0x06 ; IE0 = 1, END0 =
+                                                             1 
+  314 00000178 6008            STR              R0, [R1]    ;
+  315 0000017A         
+  316 0000017A 491F            LDR              R1, =ADC1_PP ; sampling rate is
+                                                             set to be 125 samp
+                                                            les for second
+  317 0000017C 6808            LDR              R0, [R1]    ;
+  318 0000017E F040 0001       ORR              R0, R0, #0x01 ; 
+  319 00000182 6008            STR              R0, [R1]    ;
+  320 00000184         
+  321 00000184 4918            LDR              R1, =ADC1_ACTSS 
+                                                            ; enable sequencer
+  322 00000186 6808            LDR              R0, [R1]    ;
+  323 00000188 F040 0008       ORR              R0, R0, #0x08 ; set bit for SS3
+                                                            
+  324 0000018C 6008            STR              R0, [R1]    ;
+
+
+
+ARM Macro Assembler    Page 9 
+
+
+  325 0000018E         
+  326 0000018E E8BD 1FFF       POP              {R0-R12}    ;
+  327 00000192         
+  328 00000192 F85D EB04       POP              {LR}
+  329 00000196 4770            BX               LR
+  330 00000198                 ENDP
+  331 00000198         
+  332 00000198                 ALIGN                        ;
+  333 00000198                 END
+              400FE620 
+              400FE608 
+              40005520 
+              4C4F434B 
+              40005524 
+              40005420 
+              4000550C 
+              40005400 
+              4000551C 
+              4000552C 
+              40020020 
+              4002000C 
+              40020000 
+              40020008 
+              40020004 
+              400FE638 
+              40024400 
+              40024420 
+              4002451C 
+              40024528 
+              40039000 
+              40039014 
+              400390A0 
+              400390A4 
+              40039FCA 
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
+erwork --depend=.\objects\itwoc.d -o.\objects\itwoc.o -I.\RTE\_Target_1 -IC:\Ke
+il_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C123 -IC:\Keil_v5\ARM\CMSI
+S\Include --predefine="__EVAL SETA 1" --predefine="__UVISION_VERSION SETA 524" 
+--predefine="TM4C1231H6PM SETA 1" --list=.\listings\itwoc.lst ItwoC.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+ADC1_INIT 00000104
+
+Symbol: ADC1_INIT
+   Definitions
+      At line 251 in file ItwoC.s
+   Uses
+      At line 80 in file ItwoC.s
+Comment: ADC1_INIT used once
+I2C0_INIT 00000000
+
+Symbol: I2C0_INIT
+   Definitions
+      At line 86 in file ItwoC.s
+   Uses
+      At line 78 in file ItwoC.s
+Comment: I2C0_INIT used once
+I2C0_SEND 00000096
+
+Symbol: I2C0_SEND
+   Definitions
+      At line 167 in file ItwoC.s
+   Uses
+      At line 79 in file ItwoC.s
+Comment: I2C0_SEND used once
+i2cbusy1 000000C8
+
+Symbol: i2cbusy1
+   Definitions
+      At line 216 in file ItwoC.s
+   Uses
+      At line 218 in file ItwoC.s
+Comment: i2cbusy1 used once
+i2cbusy2 000000E2
+
+Symbol: i2cbusy2
+   Definitions
+      At line 228 in file ItwoC.s
+   Uses
+      At line 230 in file ItwoC.s
+Comment: i2cbusy2 used once
+i2csending 000000A4
+
+Symbol: i2csending
+   Definitions
+      At line 182 in file ItwoC.s
+   Uses
+      At line 239 in file ItwoC.s
+Comment: i2csending used once
+routines 00000000
+
+Symbol: routines
+   Definitions
+      At line 71 in file ItwoC.s
+   Uses
+      None
+Comment: routines unused
+7 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+ADC1_ACTSS 40039000
+
+Symbol: ADC1_ACTSS
+   Definitions
+      At line 40 in file ItwoC.s
+   Uses
+      At line 295 in file ItwoC.s
+      At line 321 in file ItwoC.s
+
+ADC1_EMUX 40039014
+
+Symbol: ADC1_EMUX
+   Definitions
+      At line 43 in file ItwoC.s
+   Uses
+      At line 300 in file ItwoC.s
+Comment: ADC1_EMUX used once
+ADC1_IM 40039008
+
+Symbol: ADC1_IM
+   Definitions
+      At line 42 in file ItwoC.s
+   Uses
+      None
+Comment: ADC1_IM unused
+ADC1_ISC 4003900C
+
+Symbol: ADC1_ISC
+   Definitions
+      At line 49 in file ItwoC.s
+   Uses
+      None
+Comment: ADC1_ISC unused
+ADC1_PP 40039FCA
+
+Symbol: ADC1_PP
+   Definitions
+      At line 48 in file ItwoC.s
+   Uses
+      At line 316 in file ItwoC.s
+Comment: ADC1_PP used once
+ADC1_PSSI 40039028
+
+Symbol: ADC1_PSSI
+   Definitions
+      At line 44 in file ItwoC.s
+   Uses
+      None
+Comment: ADC1_PSSI unused
+ADC1_RIS 40039004
+
+Symbol: ADC1_RIS
+   Definitions
+      At line 41 in file ItwoC.s
+   Uses
+      None
+Comment: ADC1_RIS unused
+ADC1_SSCTL3 400390A4
+
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Absolute symbols
+
+Symbol: ADC1_SSCTL3
+   Definitions
+      At line 46 in file ItwoC.s
+   Uses
+      At line 311 in file ItwoC.s
+Comment: ADC1_SSCTL3 used once
+ADC1_SSFIFO3 400390A8
+
+Symbol: ADC1_SSFIFO3
+   Definitions
+      At line 47 in file ItwoC.s
+   Uses
+      None
+Comment: ADC1_SSFIFO3 unused
+ADC1_SSMUX3 400390A0
+
+Symbol: ADC1_SSMUX3
+   Definitions
+      At line 45 in file ItwoC.s
+   Uses
+      At line 305 in file ItwoC.s
+Comment: ADC1_SSMUX3 used once
+GPIO_PORTB_AFSEL 40005420
+
+Symbol: GPIO_PORTB_AFSEL
+   Definitions
+      At line 21 in file ItwoC.s
+   Uses
+      At line 115 in file ItwoC.s
+Comment: GPIO_PORTB_AFSEL used once
+GPIO_PORTB_CMT 40005524
+
+Symbol: GPIO_PORTB_CMT
+   Definitions
+      At line 29 in file ItwoC.s
+   Uses
+      At line 111 in file ItwoC.s
+Comment: GPIO_PORTB_CMT used once
+GPIO_PORTB_DEN 4000551C
+
+Symbol: GPIO_PORTB_DEN
+   Definitions
+      At line 23 in file ItwoC.s
+   Uses
+      At line 130 in file ItwoC.s
+Comment: GPIO_PORTB_DEN used once
+GPIO_PORTB_DIR 40005400
+
+Symbol: GPIO_PORTB_DIR
+   Definitions
+      At line 22 in file ItwoC.s
+   Uses
+      At line 125 in file ItwoC.s
+Comment: GPIO_PORTB_DIR used once
+GPIO_PORTB_GPIOODR 4000550C
+
+Symbol: GPIO_PORTB_GPIOODR
+   Definitions
+      At line 24 in file ItwoC.s
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Absolute symbols
+
+   Uses
+      At line 120 in file ItwoC.s
+      At line 140 in file ItwoC.s
+
+GPIO_PORTB_GPIOPCTL 4000552C
+
+Symbol: GPIO_PORTB_GPIOPCTL
+   Definitions
+      At line 26 in file ItwoC.s
+   Uses
+      At line 135 in file ItwoC.s
+Comment: GPIO_PORTB_GPIOPCTL used once
+GPIO_PORTB_GPIOPUR 40005510
+
+Symbol: GPIO_PORTB_GPIOPUR
+   Definitions
+      At line 25 in file ItwoC.s
+   Uses
+      None
+Comment: GPIO_PORTB_GPIOPUR unused
+GPIO_PORTB_LOCK 40005520
+
+Symbol: GPIO_PORTB_LOCK
+   Definitions
+      At line 27 in file ItwoC.s
+   Uses
+      At line 107 in file ItwoC.s
+Comment: GPIO_PORTB_LOCK used once
+GPIO_PORTB_RCGCGPIO 400FE608
+
+Symbol: GPIO_PORTB_RCGCGPIO
+   Definitions
+      At line 20 in file ItwoC.s
+   Uses
+      None
+Comment: GPIO_PORTB_RCGCGPIO unused
+GPIO_PORTE_AFSEL 40024420
+
+Symbol: GPIO_PORTE_AFSEL
+   Definitions
+      At line 57 in file ItwoC.s
+   Uses
+      At line 278 in file ItwoC.s
+Comment: GPIO_PORTE_AFSEL used once
+GPIO_PORTE_AMSEL 40024528
+
+Symbol: GPIO_PORTE_AMSEL
+   Definitions
+      At line 59 in file ItwoC.s
+   Uses
+      At line 288 in file ItwoC.s
+Comment: GPIO_PORTE_AMSEL used once
+GPIO_PORTE_DATA 40024020
+
+Symbol: GPIO_PORTE_DATA
+   Definitions
+      At line 55 in file ItwoC.s
+   Uses
+      None
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+Absolute symbols
+
+Comment: GPIO_PORTE_DATA unused
+GPIO_PORTE_DEN 4002451C
+
+Symbol: GPIO_PORTE_DEN
+   Definitions
+      At line 58 in file ItwoC.s
+   Uses
+      At line 283 in file ItwoC.s
+Comment: GPIO_PORTE_DEN used once
+GPIO_PORTE_DIR 40024400
+
+Symbol: GPIO_PORTE_DIR
+   Definitions
+      At line 56 in file ItwoC.s
+   Uses
+      At line 273 in file ItwoC.s
+Comment: GPIO_PORTE_DIR used once
+GPIO_PORTE_PCTL 4002452C
+
+Symbol: GPIO_PORTE_PCTL
+   Definitions
+      At line 60 in file ItwoC.s
+   Uses
+      None
+Comment: GPIO_PORTE_PCTL unused
+I2C0_MCR 40020020
+
+Symbol: I2C0_MCR
+   Definitions
+      At line 31 in file ItwoC.s
+   Uses
+      At line 146 in file ItwoC.s
+Comment: I2C0_MCR used once
+I2C0_MCS 40020004
+
+Symbol: I2C0_MCS
+   Definitions
+      At line 35 in file ItwoC.s
+   Uses
+      At line 207 in file ItwoC.s
+      At line 211 in file ItwoC.s
+      At line 224 in file ItwoC.s
+      At line 232 in file ItwoC.s
+
+I2C0_MDR 40020008
+
+Symbol: I2C0_MDR
+   Definitions
+      At line 34 in file ItwoC.s
+   Uses
+      At line 201 in file ItwoC.s
+Comment: I2C0_MDR used once
+I2C0_MSA 40020000
+
+Symbol: I2C0_MSA
+   Definitions
+      At line 33 in file ItwoC.s
+   Uses
+      At line 154 in file ItwoC.s
+
+
+
+ARM Macro Assembler    Page 5 Alphabetic symbol ordering
+Absolute symbols
+
+Comment: I2C0_MSA used once
+I2C0_MTPR 4002000C
+
+Symbol: I2C0_MTPR
+   Definitions
+      At line 32 in file ItwoC.s
+   Uses
+      At line 150 in file ItwoC.s
+Comment: I2C0_MTPR used once
+KEY 4C4F434B
+
+Symbol: KEY
+   Definitions
+      At line 28 in file ItwoC.s
+   Uses
+      At line 108 in file ItwoC.s
+Comment: KEY used once
+MEMORY 20000400
+
+Symbol: MEMORY
+   Definitions
+      At line 64 in file ItwoC.s
+   Uses
+      None
+Comment: MEMORY unused
+RCGCI2C0 400FE620
+
+Symbol: RCGCI2C0
+   Definitions
+      At line 19 in file ItwoC.s
+   Uses
+      At line 89 in file ItwoC.s
+Comment: RCGCI2C0 used once
+SYSCTL_RCGCADC 400FE638
+
+Symbol: SYSCTL_RCGCADC
+   Definitions
+      At line 39 in file ItwoC.s
+   Uses
+      At line 257 in file ItwoC.s
+Comment: SYSCTL_RCGCADC used once
+SYSCTL_RCGCGPIO 400FE608
+
+Symbol: SYSCTL_RCGCGPIO
+   Definitions
+      At line 52 in file ItwoC.s
+   Uses
+      At line 98 in file ItwoC.s
+      At line 264 in file ItwoC.s
+
+35 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+DELAY 00000000
+
+Symbol: DELAY
+   Definitions
+      At line 74 in file ItwoC.s
+   Uses
+      At line 262 in file ItwoC.s
+Comment: DELAY used once
+DELAY100 00000000
+
+Symbol: DELAY100
+   Definitions
+      At line 75 in file ItwoC.s
+   Uses
+      At line 269 in file ItwoC.s
+Comment: DELAY100 used once
+OutChar 00000000
+
+Symbol: OutChar
+   Definitions
+      At line 73 in file ItwoC.s
+   Uses
+      None
+Comment: OutChar unused
+3 symbols
+381 symbols in table

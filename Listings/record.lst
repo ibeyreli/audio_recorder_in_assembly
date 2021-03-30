@@ -1,0 +1,385 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;*******************************************************
+                       ******** 
+    2 00000000         ; RECORD.s
+    3 00000000         ; Initiating systick for measuring 8kHz for sampling a s
+                       ound signal 
+    4 00000000         ; in EE447 Laboratory Project Audio Recorder and Player
+    5 00000000         ; Created by Ilayda BEYRELI 2093474 & Mehmet Ali YANIKLA
+                       R 1877059
+    6 00000000         ; Created at 20/01/2017 22.20
+    7 00000000         ; Last Updated at 
+    8 00000000         ; Additional Components : 
+    9 00000000         ; 1. MAX9814 Microphone Amplifier with AGC and Low-Noise
+                        Microphone Bias
+   10 00000000         ; 2. MCP4725 12-Bit Digital-to-Analog Converter with EEP
+                       ROM Memory in SOT-23-6
+   11 00000000         ; 3. PAM8302A 2.5W Filterless Class-D Mono Audio Amplifi
+                       er
+   12 00000000         ;*******************************************************
+                       ******** 
+   13 00000000         ;*******************************************************
+                       ******** 
+   14 00000000         ; EQU Directives
+   15 00000000         ; These directives do not allocate memory
+   16 00000000         ;*******************************************************
+                       ********
+   17 00000000         ;LABEL    DIRECTIVE  VALUE   COMMENT 
+   18 00000000         
+   19 00000000         ;ADC Register
+   20 00000000 400FE638 
+                       SYSCTL_RCGCADC
+                               EQU              0x400FE638  ; ADC Clock Resigte
+                                                            r
+   21 00000000 40038000 
+                       ADC0_ACTSS
+                               EQU              0x40038000  ; Sample Sequencer 
+                                                            (Base Address of AD
+                                                            C0)
+   22 00000000 40038004 
+                       ADC0_RIS
+                               EQU              0x40038004  ; Raw Interrupt Sta
+                                                            tus
+   23 00000000 40038008 
+                       ADC0_IM EQU              0x40038008  ; Interupt Select
+   24 00000000 40038014 
+                       ADC0_EMUX
+                               EQU              0x40038014  ; Trigger Select
+   25 00000000 40038028 
+                       ADC0_PSSI
+                               EQU              0x40038028  ; Initiate Sample
+   26 00000000 400380A0 
+                       ADC0_SSMUX3
+                               EQU              0x400380A0  ; Input Channel Sel
+                                                            ect
+   27 00000000 400380A4 
+                       ADC0_SSCTL3
+                               EQU              0x400380A4  ; Sample Sequence C
+                                                            ontrol
+   28 00000000 400380A8 
+                       ADC0_SSFIFO3
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+                               EQU              0x400380A8  ; Channel 3 Status
+   29 00000000 40038FCA 
+                       ADC0_PP EQU              0x40038FCA  ; Sample Rate
+   30 00000000 4003800C 
+                       ADC0_ISC
+                               EQU              0x4003800C  ; Interrupt Status 
+                                                            & Clear
+   31 00000000         
+   32 00000000         ;*******************************************************
+                       ********
+   33 00000000         ; Directives - This Data Section is part of the code
+   34 00000000         ; It is in the read only section  so values cannot be ch
+                       anged.
+   35 00000000         ;*******************************************************
+                       ********
+   36 00000000         ;LABEL    DIRECTIVE  VALUE   COMMENT
+   37 00000000                 AREA             routines, CODE, READONLY
+   38 00000000                 THUMB
+   39 00000000                 EXTERN           OutChar     ;
+   40 00000000                 EXTERN           ADC0_INIT   ; 
+   41 00000000                 EXTERN           DELAY       ; 
+   42 00000000                 EXTERN           DELAY100    ; 100msec
+   43 00000000         
+   44 00000000         
+   45 00000000                 EXPORT           RECORD      ;
+   46 00000000         
+   47 00000000         
+   48 00000000         ;*******************************************************
+                       ********
+   49 00000000         ;  Subroutine section _ RECORD 
+   50 00000000         ;*******************************************************
+                       ********
+   51 00000000         ;LABEL   DIRECTIVE  VALUE   COMMENT
+   52 00000000         RECORD  PROC
+   53 00000000 B500            PUSH             {LR}        ;
+   54 00000002 B407            PUSH             {R0-R2}     ;
+   55 00000004         timerloop
+   56 00000004         
+   57 00000004         
+   58 00000004         ;Sampling the audio signal
+   59 00000004         
+   60 00000004 4911    Sample  LDR              R1, =ADC0_PSSI ; initialize sam
+                                                            pling
+   61 00000006 6808            LDR              R0, [R1]    ;
+   62 00000008 F040 0008       ORR              R0, R0, #0x08 ;
+   63 0000000C 6008            STR              R0, [R1]    ;
+   64 0000000E         
+   65 0000000E 4910    Polling LDR              R1, =ADC0_RIS ; checking RIS re
+                                                            sigter by polling
+   66 00000010 6808            LDR              R0, [R1]    ;
+   67 00000012 F010 0008       ANDS             R0, R0, #0x08 ;
+   68 00000016 D0FA            BEQ              Polling     ;
+   69 00000018         
+   70 00000018 490E            LDR              R1, =ADC0_SSFIFO3 ; read the re
+                                                            sult in case of int
+                                                            errupt
+   71 0000001A 680C            LDR              R4, [R1]    ;
+   72 0000001C         
+   73 0000001C         ; Storing the Data
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   74 0000001C EA4F 1414       LSR              R4, #4      ;
+   75 00000020 F803 4B01       STRB             R4, [R3], #1 ; 
+   76 00000024         
+   77 00000024         ;MOV    R5, R7 ;
+   78 00000024         ;BL     OutChar ;
+   79 00000024         
+   80 00000024 490C            LDR              R1, =ADC0_ISC ; clearing interr
+                                                            upt flag
+   81 00000026 F04F 0008       MOV              R0, #0x8    ;
+   82 0000002A 6008            STR              R0, [R1]    ; 
+   83 0000002C         
+   84 0000002C         ; Resampling Decision Segment
+   85 0000002C 2F00            CMP              R7, #0      ; 
+   86 0000002E D100            BNE              SampleNotDone ; 
+   87 00000030 E004            B                EndofHandler
+   88 00000032         
+   89 00000032         SampleNotDone
+   90 00000032 F7FF FFFE       BL               DELAY       ; 
+   91 00000036         
+   92 00000036         ;MOV    R5, #70 ; 'F'
+   93 00000036         ;BL     OutChar;
+   94 00000036         
+   95 00000036 F1A7 0701       SUB              R7, R7, #1  ;
+   96 0000003A E7E3            B                Sample      ;
+   97 0000003C         
+   98 0000003C         EndofHandler
+   99 0000003C F04F 0548       MOV              R5, #72     ; 'H'
+  100 00000040 F7FF FFFE       BL               OutChar     ;
+  101 00000044         
+  102 00000044 BC07            POP              {R0-R2}     ;
+  103 00000046 F85D EB04       POP              {LR}        ;
+  104 0000004A 4770            BX               LR          ;
+  105 0000004C                 ENDP
+  106 0000004C         
+  107 0000004C                 ALIGN
+  108 0000004C                 END
+              40038028 
+              40038004 
+              400380A8 
+              4003800C 
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
+erwork --depend=.\objects\record.d -o.\objects\record.o -I.\RTE\_Target_1 -IC:\
+Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C123 -IC:\Keil_v5\ARM\CM
+SIS\Include --predefine="__EVAL SETA 1" --predefine="__UVISION_VERSION SETA 524
+" --predefine="TM4C1231H6PM SETA 1" --list=.\listings\record.lst RECORD.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+EndofHandler 0000003C
+
+Symbol: EndofHandler
+   Definitions
+      At line 98 in file RECORD.s
+   Uses
+      At line 87 in file RECORD.s
+Comment: EndofHandler used once
+Polling 0000000E
+
+Symbol: Polling
+   Definitions
+      At line 65 in file RECORD.s
+   Uses
+      At line 68 in file RECORD.s
+Comment: Polling used once
+RECORD 00000000
+
+Symbol: RECORD
+   Definitions
+      At line 52 in file RECORD.s
+   Uses
+      At line 45 in file RECORD.s
+Comment: RECORD used once
+Sample 00000004
+
+Symbol: Sample
+   Definitions
+      At line 60 in file RECORD.s
+   Uses
+      At line 96 in file RECORD.s
+Comment: Sample used once
+SampleNotDone 00000032
+
+Symbol: SampleNotDone
+   Definitions
+      At line 89 in file RECORD.s
+   Uses
+      At line 86 in file RECORD.s
+Comment: SampleNotDone used once
+routines 00000000
+
+Symbol: routines
+   Definitions
+      At line 37 in file RECORD.s
+   Uses
+      None
+Comment: routines unused
+timerloop 00000004
+
+Symbol: timerloop
+   Definitions
+      At line 55 in file RECORD.s
+   Uses
+      None
+Comment: timerloop unused
+7 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+ADC0_ACTSS 40038000
+
+Symbol: ADC0_ACTSS
+   Definitions
+      At line 21 in file RECORD.s
+   Uses
+      None
+Comment: ADC0_ACTSS unused
+ADC0_EMUX 40038014
+
+Symbol: ADC0_EMUX
+   Definitions
+      At line 24 in file RECORD.s
+   Uses
+      None
+Comment: ADC0_EMUX unused
+ADC0_IM 40038008
+
+Symbol: ADC0_IM
+   Definitions
+      At line 23 in file RECORD.s
+   Uses
+      None
+Comment: ADC0_IM unused
+ADC0_ISC 4003800C
+
+Symbol: ADC0_ISC
+   Definitions
+      At line 30 in file RECORD.s
+   Uses
+      At line 80 in file RECORD.s
+Comment: ADC0_ISC used once
+ADC0_PP 40038FCA
+
+Symbol: ADC0_PP
+   Definitions
+      At line 29 in file RECORD.s
+   Uses
+      None
+Comment: ADC0_PP unused
+ADC0_PSSI 40038028
+
+Symbol: ADC0_PSSI
+   Definitions
+      At line 25 in file RECORD.s
+   Uses
+      At line 60 in file RECORD.s
+Comment: ADC0_PSSI used once
+ADC0_RIS 40038004
+
+Symbol: ADC0_RIS
+   Definitions
+      At line 22 in file RECORD.s
+   Uses
+      At line 65 in file RECORD.s
+Comment: ADC0_RIS used once
+ADC0_SSCTL3 400380A4
+
+Symbol: ADC0_SSCTL3
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Absolute symbols
+
+   Definitions
+      At line 27 in file RECORD.s
+   Uses
+      None
+Comment: ADC0_SSCTL3 unused
+ADC0_SSFIFO3 400380A8
+
+Symbol: ADC0_SSFIFO3
+   Definitions
+      At line 28 in file RECORD.s
+   Uses
+      At line 70 in file RECORD.s
+Comment: ADC0_SSFIFO3 used once
+ADC0_SSMUX3 400380A0
+
+Symbol: ADC0_SSMUX3
+   Definitions
+      At line 26 in file RECORD.s
+   Uses
+      None
+Comment: ADC0_SSMUX3 unused
+SYSCTL_RCGCADC 400FE638
+
+Symbol: SYSCTL_RCGCADC
+   Definitions
+      At line 20 in file RECORD.s
+   Uses
+      None
+Comment: SYSCTL_RCGCADC unused
+11 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+ADC0_INIT 00000000
+
+Symbol: ADC0_INIT
+   Definitions
+      At line 40 in file RECORD.s
+   Uses
+      None
+Comment: ADC0_INIT unused
+DELAY 00000000
+
+Symbol: DELAY
+   Definitions
+      At line 41 in file RECORD.s
+   Uses
+      At line 90 in file RECORD.s
+Comment: DELAY used once
+DELAY100 00000000
+
+Symbol: DELAY100
+   Definitions
+      At line 42 in file RECORD.s
+   Uses
+      None
+Comment: DELAY100 unused
+OutChar 00000000
+
+Symbol: OutChar
+   Definitions
+      At line 39 in file RECORD.s
+   Uses
+      At line 100 in file RECORD.s
+Comment: OutChar used once
+4 symbols
+358 symbols in table
